@@ -136,6 +136,153 @@ var TouchController = Class.create({
       }
     }
   },
+  handleTouchMoveEvent: function (a) {
+    if (this.preventDefault) {
+      a.preventDefault();
+    }
+    debugMessage(kDebugTouchController_HandleTouchCancelEvent, "");
+  },
+  handleTouchEndEvent: function (a) {
+    debugMessage(
+      kDebugTouchController_HandleTouchEndEvent,
+      "touch event has " + a.touches.length + " fingers..."
+    );
+    if (this.swipeInProgress) {
+      if (this.preventDefault) {
+        a.preventDefault();
+      }
+      if (a.touches.length === 0) {
+        debugMessage(
+          kDebugTouchController_HandleTouchEndEvent,
+          "-  " + this.swipeFingerCount + " finger swipe is complete."
+        );
+        var h = a.changedTouches[0];
+        var m = document.viewport.getDimensions();
+        var e = m.width / 3;
+        var d = m.height / 3;
+        var g = m.width / 3;
+        var k = h.clientX - this.swipeStartX;
+        var i = h.clientY - this.swipeStartY;
+        var c = Math.abs(k);
+        var b = Math.abs(i);
+        var o = new Date();
+        var q = o - this.swipeStartTime;
+        var l = false;
+        var p = false;
+        var f = 400;
+        var j = 20;
+        if (q < f) {
+          debugMessage(
+            kDebugTouchController_HandleTouchEndEvent,
+            "-  elapsed time was short enough to be a tap, check its magnitude..."
+          );
+          if (c < j && b < j) {
+            l = true;
+          } else {
+            debugMessage(
+              kDebugTouchController_HandleTouchEndEvent,
+              "-  magnitude time too big to be a tap, check if it's a swipe..."
+            );
+          }
+        } else {
+          debugMessage(
+            kDebugTouchController_HandleTouchEndEvent,
+            "-  elapsed time too long to be a tap, check if it's a swipe..."
+          );
+        }
+        if (q > 800) {
+          debugMessage(
+            kDebugTouchController_HandleTouchEndEvent,
+            "-  elapsed time too long to be a swipe, ignoring..."
+          );
+        } else {
+          if (c > b) {
+            if (b > d) {
+              debugMessage(
+                kDebugTouchController_HandleTouchEndEvent,
+                "-  vertical magnitude too high, ignoring..."
+              );
+            } else {
+              p = true;
+            }
+          } else {
+            if (c > g) {
+              debugMessage(
+                kDebugTouchController_HandleTouchEndEvent,
+                "-  horizontal magnitude too high, ignoring..."
+              );
+            } else {
+              p = true;
+            }
+          }
+        }
+        if (l) {
+          debugMessage(
+            kDebugTouchController_HandleTouchEndEvent,
+            "-  it's a " + this.swipeFingerCount + " finger tap"
+          );
+          if (this.tapEventCallback) {
+            var a = {};
+            a.memo = {};
+            a.memo.fingers = this.swipeFingerCount;
+            a.memo.pointX = h.clientX;
+            a.memo.pointY = h.clientY;
+            debugMessage(
+              kDebugTouchController_HandleTouchEndEvent,
+              "- invoking callback with pointX: " +
+                h.clientX +
+                " pointY: " +
+                h.clientY +
+                "..."
+            );
+            this.tapEventCallback(a);
+            debugMessage(
+              kDebugTouchController_HandleTouchEndEvent,
+              "- back from callback"
+            );
+          } else {
+            debugMessage(
+              kDebugTouchController_HandleTouchEndEvent,
+              "- firing TapEvent..."
+            );
+            document.fire(kTapEvent, {
+              fingers: this.swipeFingerCount,
+              pointX: h.clientX,
+              pointY: h.clientY,
+            });
+          }
+        } else {
+          if (p) {
+            var n;
+            if (c > b) {
+              n = k < 0 ? "left" : "right";
+            } else {
+              n = i < 0 ? "up" : "down";
+            }
+            debugMessage(
+              kDebugTouchController_HandleTouchEndEvent,
+              "-  it's a " +
+                this.swipeFingerCount +
+                " finger swipe in the " +
+                n +
+                " direction"
+            );
+            document.fire(kSwipeEvent, {
+              direction: n,
+              fingers: this.swipeFingerCount,
+            });
+          }
+        }
+        this.swipeInProgress = false;
+        this.swipeFingerCount = 0;
+      }
+    } else {
+      debugMessage(
+        kDebugTouchController_HandleTouchEndEvent,
+        "-  false alarm. swipe has already ended."
+      );
+    }
+  },
   handleTouchCancelEvent: function (a) {
     debugMessage(kDebugTouchController_HandleTouchCancelEvent, "");
     this.swipeInProgress = false;
